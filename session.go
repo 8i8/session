@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/8i8/http/session/ram"
+	"github.com/8i8/session/ram"
 	"github.com/google/uuid"
 )
 
@@ -15,10 +15,19 @@ var Err07User = errors.New("user error")
 var Err08Resource = errors.New("resource error")
 var Err09Record = errors.New("record error")
 
+// Session maintains users data whilst they are logged into the
+// application.
+type Session interface {
+	Set(key string, value interface{}) (err error)
+	Get(key string) (value interface{}, err error)
+	Del(key string) (err error)
+	Valid() (ok bool)
+}
+
 // Provider is an interface for the session manager.
 type Provider interface {
-	Create(sid uuid.UUID, maxage int) (Session, error)
-	Restore(sid uuid.UUID) (Session, error)
+	Create(sid uuid.UUID, maxage int) (ram.Session, error)
+	Restore(sid uuid.UUID) (ram.Session, error)
 	Destroy(sid uuid.UUID) error
 }
 
@@ -45,15 +54,15 @@ const (
 
 // manager contains a session provider.
 type manager struct {
-	storeManager
+	Manager
 }
 
 // NewManager returns a session manager.
-func NewManager(mem MemType) storeManager {
+func NewManager(mem MemType) Manager {
 	var m manager
 	switch mem {
 	case RAM:
-		m.storeManager = ram.Init()
+		m.Manager = ram.Init()
 	}
 	return m
 }
