@@ -1,0 +1,8 @@
+github.com/8i8/http v0.0.0-20210509115950-98b44507eace h1:Lz4QQ5P6QoA+lEJXFmoz2vOqYB2cl5peXTxQ5yqbDnA=
+github.com/8i8/http v0.0.0-20210509115950-98b44507eace/go.mod h1:IVzrox7xf+5Jk/dvj/JYDHylcGaQ5BLx0oasgYQ3svA=
+github.com/8i8/log v0.0.8 h1:nEGelRPrzrTfCCMBO2+R7Lw0SApLCPF7dPruTIDqYdE=
+github.com/8i8/log v0.0.8/go.mod h1:p7IqwffVoGdee7sHQlggv9emJK7A+HXnl29TifNajd8=
+github.com/8i8/term v0.0.2 h1:CB02YyNXSlN/RbrWZwK/vxXHl7R/ft1pn5tjguJuX64=
+github.com/8i8/term v0.0.2/go.mod h1:Ad0haYOuMpn4AcPSB4wGcbTtTlMjEucxMmKiX26EZLE=
+github.com/google/uuid v1.2.0 h1:qJYtXnJRWmpe7m/3XlyhrsLrEURqHRM2kxzoxXqyUDs=
+github.com/google/uuid v1.2.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
