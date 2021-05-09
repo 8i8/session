@@ -1,11 +1,19 @@
 package session
 
 import (
+	"errors"
 	"time"
 
 	"github.com/8i8/http/session/ram"
 	"github.com/google/uuid"
 )
+
+// Application error messages.
+var Err03Activation = errors.New("activation error")
+var Err05Request = errors.New("request error")
+var Err07User = errors.New("user error")
+var Err08Resource = errors.New("resource error")
+var Err09Record = errors.New("record error")
 
 // Provider is an interface for the session manager.
 type Provider interface {
