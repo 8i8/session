@@ -15,9 +15,9 @@ var Err07User = errors.New("user error")
 var Err08Resource = errors.New("resource error")
 var Err09Record = errors.New("record error")
 
-// Session maintains users data whilst they are logged into the
-// application.
-type Session interface {
+// Sessioner maintains users session data whilst they are logged into
+// the application.
+type Sessioner interface {
 	Set(key string, value interface{}) (err error)
 	Get(key string) (value interface{}, err error)
 	Del(key string) (err error)
