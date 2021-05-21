@@ -24,7 +24,7 @@ type Sessioner interface {
 	Valid() (ok bool)
 }
 
-// Provider is an interface for the session manager.
+// Provider administers concrete sessions, in all but longevity.
 type Provider interface {
 	Create(sid uuid.UUID, maxage int) (ram.Session, error)
 	Restore(sid uuid.UUID) (ram.Session, error)
@@ -36,8 +36,8 @@ type Timer interface {
 	Period(t time.Duration) time.Duration
 }
 
-// Manager is the interface into which the provider is held within
-// the Manager struct.
+// Manager provides an interface for administering sessions, it
+// includes a Timer for session timeout.
 type Manager interface {
 	Provider
 	Timer

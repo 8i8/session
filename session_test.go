@@ -32,7 +32,7 @@ func TestDeactivate(t *testing.T) {
 		t.Errorf("%s: want <nil> got (%T, %+v)", fname, err, err)
 	}
 
-	// Should return false but not an error.
+	// Should return Err09Record.
 	one, err := sess2.Get("num")
 	if err != Err09Record {
 		t.Errorf("%s: want ErrNotFound got (%T, %+v)",
