@@ -179,7 +179,7 @@ func (c command) timeout(action string) {
 		const event = "clearing session store"
 		log.Debug(nil, action, fname, event)
 	}
-	for key, _ := range c.seStore.sessions {
+	for key := range c.seStore.sessions {
 		s := c.seStore.sessions[key]
 		if time.Since(s.modified) > s.maxage {
 			c.seStore.destroy(action, key, fname)
