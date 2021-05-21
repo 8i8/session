@@ -318,8 +318,8 @@ func (s *store) Destroy(sid uuid.UUID) (err error) {
 	return
 }
 
-// SetPeriod sets the periodicity for the stores timeout function timer.
-func (s *store) SetPeriod(t time.Duration) (previous time.Duration) {
+// Period sets the periodicity for the stores timeout function timer.
+func (s *store) Period(t time.Duration) (previous time.Duration) {
 	previous = s.period
 	s.period = t
 	return

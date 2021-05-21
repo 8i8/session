@@ -34,7 +34,7 @@ type Provider interface {
 // TimeOut provides an encapulated addition to the Provider interface,
 // such that it be possible to set the session providers timeout period.
 type TimeOut interface {
-	SetPeriod(t time.Duration) time.Duration
+	Period(t time.Duration) time.Duration
 }
 
 // Manager is the interface into which the provider is held within
@@ -87,7 +87,7 @@ func (m *manager) Options(opts ...OptMgrFunc) (previous OptMgrFunc) {
 // The default value is 20 minutes.
 func (o OptMgrFunc) Period(t time.Duration) (previous OptMgrFunc) {
 	return func(m *manager) OptMgrFunc {
-		prev := m.SetPeriod(t)
+		prev := m.Period(t)
 		return o.Period(prev)
 	}
 }
