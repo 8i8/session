@@ -31,9 +31,8 @@ type Provider interface {
 	Destroy(sid uuid.UUID) error
 }
 
-// TimeOut provides an encapulated addition to the Provider interface,
-// such that it be possible to set the session providers timeout period.
-type TimeOut interface {
+// Timer returns.
+type Timer interface {
 	Period(t time.Duration) time.Duration
 }
 
@@ -41,7 +40,7 @@ type TimeOut interface {
 // the Manager struct.
 type Manager interface {
 	Provider
-	TimeOut
+	Timer
 }
 
 // MemType define the type of memory that the session server is to use.
