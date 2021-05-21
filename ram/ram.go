@@ -1,19 +1,12 @@
 package ram
 
 import (
-	"errors"
 	"time"
 
 	"github.com/8i8/log"
+	"github.com/8i8/meta"
 	"github.com/google/uuid"
 )
-
-// Application error messages.
-var Err03Activation = errors.New("activation error")
-var Err05Request = errors.New("request error")
-var Err07User = errors.New("user error")
-var Err08Resource = errors.New("resource error")
-var Err09Record = errors.New("record error")
 
 // valueStore is the providrs data storage.
 type valueStore map[interface{}]interface{}
@@ -259,7 +252,7 @@ func Init() *store {
 func (s *store) Create(sid uuid.UUID, maxage int) (
 	se Session, err error) {
 	if sid.Variant() == uuid.Invalid {
-		err = Err05Request
+		err = meta.Err05Request
 	}
 	res := make(chan Session)
 	c := command{
@@ -272,7 +265,7 @@ func (s *store) Create(sid uuid.UUID, maxage int) (
 	s.commands <- c
 	sess := <-res
 	if !sess.active {
-		err = Err08Resource
+		err = meta.Err08Resource
 	}
 	se = sess
 	return
@@ -283,7 +276,7 @@ func (s *store) Create(sid uuid.UUID, maxage int) (
 func (s *store) Restore(sid uuid.UUID) (
 	se Session, err error) {
 	if sid.Variant() == uuid.Invalid {
-		err = Err05Request
+		err = meta.Err05Request
 	}
 	res := make(chan Session)
 	c := command{
@@ -295,7 +288,7 @@ func (s *store) Restore(sid uuid.UUID) (
 	s.commands <- c
 	sess := <-res
 	if !sess.active {
-		err = Err09Record
+		err = meta.Err09Record
 	}
 	se = sess
 	return
@@ -304,7 +297,7 @@ func (s *store) Restore(sid uuid.UUID) (
 // Destroy removes a session from the store.
 func (s *store) Destroy(sid uuid.UUID) (err error) {
 	if sid.Variant() == uuid.Invalid {
-		err = Err05Request
+		err = meta.Err05Request
 	}
 	res := make(chan Session)
 	c := command{
@@ -375,7 +368,7 @@ func (s Session) Set(key string, value interface{}) (err error) {
 	const fname = "s.Set"
 	const action = "set value"
 	if s.sto == nil || !s.active {
-		return Err03Activation
+		return meta.Err03Activation
 	}
 	s = s.sto.touch(s.id)
 	if !s.active {
@@ -384,7 +377,7 @@ func (s Session) Set(key string, value interface{}) (err error) {
 			log.Debug(nil, action, fname, event,
 				"SID", s.id)
 		}
-		return Err08Resource
+		return meta.Err08Resource
 	}
 	if log.Level(log.DEBUG) {
 		const event = "success"
@@ -401,11 +394,11 @@ func (s Session) Get(key string) (
 	const fname = "s.Get"
 	const action = "get value"
 	if s.sto == nil || !s.active {
-		return nil, Err03Activation
+		return nil, meta.Err03Activation
 	}
 	s = s.sto.touch(s.id)
 	if !s.active {
-		return nil, Err08Resource
+		return nil, meta.Err08Resource
 	}
 	value, ok := s.data[key]
 	if !ok {
@@ -414,7 +407,7 @@ func (s Session) Get(key string) (
 			log.Debug(nil, action, fname, event,
 				"SID", s.id)
 		}
-		err = Err09Record
+		err = meta.Err09Record
 		return
 	}
 	if log.Level(log.DEBUG) {
@@ -430,7 +423,7 @@ func (s Session) Del(key string) (err error) {
 	const fname = "s.Del"
 	const action = "value deletion"
 	if s.sto == nil || !s.active {
-		return Err03Activation
+		return meta.Err03Activation
 	}
 	s = s.sto.touch(s.id)
 	if !s.active {
@@ -439,7 +432,7 @@ func (s Session) Del(key string) (err error) {
 			log.Debug(nil, action, fname, event,
 				"SID", s.id)
 		}
-		return Err08Resource
+		return meta.Err08Resource
 	}
 	delete(s.data, key)
 	if log.Level(log.DEBUG) {

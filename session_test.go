@@ -1,8 +1,10 @@
 package session
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/8i8/meta"
 	"github.com/google/uuid"
 )
 
@@ -34,8 +36,8 @@ func TestDeactivate(t *testing.T) {
 
 	// Should return Err09Record.
 	one, err := sess2.Get("num")
-	if err != Err09Record {
-		t.Errorf("%s: want ErrNotFound got (%T, %+v)",
+	if !errors.Is(err, meta.Err09Record) {
+		t.Errorf("%s: want meta.Err09Record got (%T, %v)",
 			fname, err, err)
 	}
 
@@ -69,8 +71,8 @@ func TestActivate(t *testing.T) {
 		t.Errorf("%s: want <nil> got (%T, %+v)", fname, err, err)
 	}
 	sess2, err := m.Create(id, 0)
-	if err != Err08Resource {
-		t.Errorf("%s: want %q got %q", fname, Err08Resource,
+	if !errors.Is(err, meta.Err08Resource) {
+		t.Errorf("%s: want %q got %q", fname, meta.Err08Resource,
 			err)
 	}
 	sess2, err = m.Restore(id)
@@ -105,7 +107,7 @@ func TestActivate(t *testing.T) {
 	sess.Del("one")
 
 	one, err = sess2.Get("one")
-	if err != Err09Record {
+	if !errors.Is(err, meta.Err09Record) {
 		t.Errorf("%s: want ErrNotFound got (%T, %+v)", fname, err, err)
 	}
 	if one != nil {
