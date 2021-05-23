@@ -75,7 +75,7 @@ func (c command) create(action string) (s Session) {
 	const fname = "create"
 	_, exists := c.seStore.sessions[c.key]
 	if exists {
-		if log.Level(log.DEBUG) {
+		if log.Is(log.DEBUG) {
 			const event = "Session already in use"
 			log.Debug(nil, action, fname, event,
 				"SID", c.key)
@@ -101,7 +101,7 @@ func (c command) create(action string) (s Session) {
 	// Add SID to array and augment index tally.
 	c.seStore.array = append(c.seStore.array, c.key)
 	c.seStore.index++
-	if log.Level(log.DEBUG) {
+	if log.Is(log.DEBUG) {
 		const event = "Session created"
 		log.Debug(nil, action, fname, event, "SID", c.key)
 	}
@@ -114,7 +114,7 @@ func (c command) retrieve(action string) (s Session) {
 	const fname = "activate"
 	s, ok := c.seStore.sessions[c.key]
 	if ok {
-		if log.Level(log.DEBUG) {
+		if log.Is(log.DEBUG) {
 			const event = "Session restored"
 			log.Debug(nil, action, fname, event,
 				"SID", c.key)
@@ -123,7 +123,7 @@ func (c command) retrieve(action string) (s Session) {
 		s.maxage = c.maxage
 		return s
 	}
-	if log.Level(log.DEBUG) {
+	if log.Is(log.DEBUG) {
 		const event = "Session not found"
 		log.Debug(nil, action, fname, event, "SID", c.key)
 	}
@@ -139,7 +139,7 @@ func (c command) destroy(action string) {
 		c.seStore.destroy(action, c.key, fname)
 		return
 	}
-	if log.Level(log.DEBUG) {
+	if log.Is(log.DEBUG) {
 		const event = "no session to destroy"
 		log.Debug(nil, action, fname, event, "SID", c.key)
 	}
@@ -156,7 +156,7 @@ func (c command) touch(action string) (s Session) {
 		c.seStore.sessions[c.key] = s
 		return s
 	}
-	if log.Level(log.DEBUG) {
+	if log.Is(log.DEBUG) {
 		const event = "no session for this key"
 		log.Debug(nil, action, fname, event, "SID", c.key)
 	}
@@ -168,7 +168,7 @@ func (c command) touch(action string) (s Session) {
 // difference between now and the last modified time.
 func (c command) timeout(action string) {
 	const fname = "cmd.timeout"
-	if log.Level(log.DEBUG) {
+	if log.Is(log.DEBUG) {
 		const event = "clearing session store"
 		log.Debug(nil, action, fname, event)
 	}
@@ -196,7 +196,7 @@ func (s *Store) destroy(action string, key uuid.UUID, sender string) {
 	// Retrieve the session.
 	se, ok := s.sessions[key]
 	if !ok {
-		if log.Level(log.ERROR) {
+		if log.Is(log.ERROR) {
 			const event = "no session found"
 			log.Err(nil, action, fname, event, "SID", key,
 				"caller", sender)
@@ -217,7 +217,7 @@ func (s *Store) destroy(action string, key uuid.UUID, sender string) {
 
 	// Remove the session from the map.
 	delete(s.sessions, key)
-	if log.Level(log.DEBUG) {
+	if log.Is(log.DEBUG) {
 		const event = "session destroyed"
 		log.Debug(nil, action, fname, event, "SID", key,
 			"caller", sender)
@@ -372,14 +372,14 @@ func (s Session) Set(key string, value interface{}) (err error) {
 	}
 	s = s.sto.touch(s.id)
 	if !s.active {
-		if log.Level(log.DEBUG) {
+		if log.Is(log.DEBUG) {
 			const event = "failed"
 			log.Debug(nil, action, fname, event,
 				"SID", s.id)
 		}
 		return meta.Err08Resource
 	}
-	if log.Level(log.DEBUG) {
+	if log.Is(log.DEBUG) {
 		const event = "success"
 		log.Debug(nil, action, fname, event,
 			"SID", s.id)
@@ -402,7 +402,7 @@ func (s Session) Get(key string) (
 	}
 	value, ok := s.data[key]
 	if !ok {
-		if log.Level(log.DEBUG) {
+		if log.Is(log.DEBUG) {
 			const event = "failed"
 			log.Debug(nil, action, fname, event,
 				"SID", s.id)
@@ -410,7 +410,7 @@ func (s Session) Get(key string) (
 		err = meta.Err09Record
 		return
 	}
-	if log.Level(log.DEBUG) {
+	if log.Is(log.DEBUG) {
 		const event = "success"
 		log.Debug(nil, action, fname, event,
 			"SID", s.id)
@@ -427,7 +427,7 @@ func (s Session) Del(key string) (err error) {
 	}
 	s = s.sto.touch(s.id)
 	if !s.active {
-		if log.Level(log.DEBUG) {
+		if log.Is(log.DEBUG) {
 			const event = "failed"
 			log.Debug(nil, action, fname, event,
 				"SID", s.id)
@@ -435,7 +435,7 @@ func (s Session) Del(key string) (err error) {
 		return meta.Err08Resource
 	}
 	delete(s.data, key)
-	if log.Level(log.DEBUG) {
+	if log.Is(log.DEBUG) {
 		const event = "success"
 		log.Debug(nil, action, fname, event,
 			"SID", s.id)
