@@ -38,7 +38,7 @@ type command struct {
 	key     uuid.UUID
 	maxage  time.Duration
 	result  chan Session
-	seStore *store
+	seStore *Store
 }
 
 // sessionServer responds to requests for sessions either serving or
@@ -190,7 +190,7 @@ func (c command) def(action string) {
 // destroy removes the session corresponding to the given SID from the
 // store, if it exists, this function is not to be used concurrently and
 // has be designed to run only for the dataServer function.
-func (s *store) destroy(action string, key uuid.UUID, sender string) {
+func (s *Store) destroy(action string, key uuid.UUID, sender string) {
 	const fname = "cmd.destroy"
 
 	// Retrieve the session.
@@ -224,9 +224,9 @@ func (s *store) destroy(action string, key uuid.UUID, sender string) {
 	}
 }
 
-// store contains the session map and array of indices used to track
+// Store contains the session map and array of indices used to track
 // sessions.
-type store struct {
+type Store struct {
 	sessions map[uuid.UUID]Session
 	array    []uuid.UUID
 	index    int
@@ -235,10 +235,10 @@ type store struct {
 }
 
 // Init initialises a new ram store.
-func Init() *store {
+func Init() *Store {
 	var cmds = make(chan command)
 	go sessionServer(cmds)
-	s := store{
+	s := Store{
 		sessions: make(map[uuid.UUID]Session),
 		period:   time.Minute * time.Duration(defaultPeriod),
 		commands: cmds,
@@ -249,7 +249,7 @@ func Init() *store {
 
 // Create makes a session for which the given SID is the key, returning
 // and error if the SID is already in use.
-func (s *store) Create(sid uuid.UUID, maxage int) (
+func (s *Store) Create(sid uuid.UUID, maxage int) (
 	se Session, err error) {
 	if sid.Variant() == uuid.Invalid {
 		err = meta.Err05Request
@@ -273,7 +273,7 @@ func (s *store) Create(sid uuid.UUID, maxage int) (
 
 // Restore returns a session for which the given SID is the key if it
 // exists, returning an error if it does not.
-func (s *store) Restore(sid uuid.UUID) (
+func (s *Store) Restore(sid uuid.UUID) (
 	se Session, err error) {
 	if sid.Variant() == uuid.Invalid {
 		err = meta.Err05Request
@@ -295,7 +295,7 @@ func (s *store) Restore(sid uuid.UUID) (
 }
 
 // Destroy removes a session from the store.
-func (s *store) Destroy(sid uuid.UUID) (err error) {
+func (s *Store) Destroy(sid uuid.UUID) (err error) {
 	if sid.Variant() == uuid.Invalid {
 		err = meta.Err05Request
 	}
@@ -312,7 +312,7 @@ func (s *store) Destroy(sid uuid.UUID) (err error) {
 }
 
 // Period sets the periodicity for the stores timeout function timer.
-func (s *store) Period(t time.Duration) (previous time.Duration) {
+func (s *Store) Period(t time.Duration) (previous time.Duration) {
 	previous = s.period
 	s.period = t
 	return
@@ -320,7 +320,7 @@ func (s *store) Period(t time.Duration) (previous time.Duration) {
 
 // startTimer starts a go routine that periodically clears unused
 // sessions from the session store.
-func (s *store) startTimer() {
+func (s *Store) startTimer() {
 	res := make(chan Session)
 	c := command{
 		cmd:     timecheck,
@@ -337,7 +337,7 @@ func (s *store) startTimer() {
 }
 
 // touch updates the sessions lastUsed time to now.
-func (s *store) touch(sid uuid.UUID) (se Session) {
+func (s *Store) touch(sid uuid.UUID) (se Session) {
 	res := make(chan Session)
 	c := command{
 		cmd:     touch,
@@ -358,7 +358,7 @@ type Session struct {
 	created  time.Time
 	modified time.Time
 	index    int
-	sto      *store
+	sto      *Store
 	maxage   time.Duration
 	active   bool
 }
