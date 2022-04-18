@@ -1,12 +1,19 @@
 package ram
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/8i8/log"
-	"github.com/8i8/meta"
 	"github.com/google/uuid"
 )
+
+const pkg = "session"
+var ErrNoSession = errors.New("session does not exist")
+var ErrPoorForm = errors.New("poorly formed uuid")
+var ErrTimedOut = errors.New("session timed out")
+var ErrNoData = errors.New("no data in session")
 
 // valueStore is the providrs data storage.
 type valueStore map[interface{}]interface{}
@@ -45,24 +52,22 @@ type command struct {
 // removing them, sessions may be removed either by request or when they
 // timeout through lack of activity.
 func sessionServer(commands chan command) {
-	const fname = "sessionServer"
-	const action = "session access"
 	for c := range commands {
 		switch c.cmd {
 		case create:
-			c.result <- c.create(action)
+			c.result <- c.create()
 		case activate:
-			c.result <- c.retrieve(action)
+			c.result <- c.retrieve()
 		case deactivate:
-			c.destroy(action)
+			c.destroy()
 			c.result <- Session{}
 		case touch:
-			c.result <- c.touch(action)
+			c.result <- c.touch()
 		case timecheck:
-			c.timeout(action)
+			c.timeout()
 			c.result <- Session{}
 		default:
-			c.def(action)
+			c.def()
 			c.result <- Session{}
 		}
 	}
@@ -71,13 +76,13 @@ func sessionServer(commands chan command) {
 // create makes a session for the given sid, returning and error if the
 // session already exists, returning and empty session struct if it does
 // not.
-func (c command) create(action string) (s Session) {
+func (c command) create() (s Session) {
 	const fname = "create"
 	_, exists := c.seStore.sessions[c.key]
 	if exists {
 		if log.Is(log.DEBUG) {
 			const event = "Session already in use"
-			log.Debug(nil, action, fname, event,
+			log.Debug(nil, pkg, fname, event,
 				"SID", c.key)
 		}
 		return Session{}
@@ -103,20 +108,20 @@ func (c command) create(action string) (s Session) {
 	c.seStore.index++
 	if log.Is(log.DEBUG) {
 		const event = "Session created"
-		log.Debug(nil, action, fname, event, "SID", c.key)
+		log.Debug(nil, pkg, fname, event, "SID", c.key)
 	}
 	return s
 }
 
 // retrieve returns an active session if one exists for the given sid,
 // returning and empty session struct if it does not.
-func (c command) retrieve(action string) (s Session) {
+func (c command) retrieve() (s Session) {
 	const fname = "activate"
 	s, ok := c.seStore.sessions[c.key]
 	if ok {
 		if log.Is(log.DEBUG) {
 			const event = "Session restored"
-			log.Debug(nil, action, fname, event,
+			log.Debug(nil, pkg, fname, event,
 				"SID", c.key)
 		}
 		// Reset maxage, it may have changed.
@@ -125,29 +130,29 @@ func (c command) retrieve(action string) (s Session) {
 	}
 	if log.Is(log.DEBUG) {
 		const event = "Session not found"
-		log.Debug(nil, action, fname, event, "SID", c.key)
+		log.Debug(nil, pkg, fname, event, "SID", c.key)
 	}
 	return Session{}
 }
 
 // destroy destroys the session corresponding to the given sid,
 // logging an error if there is no session to match the key.
-func (c command) destroy(action string) {
+func (c command) destroy() {
 	const fname = "cmd.destroy"
 	// If the session uuid is valid destroy the session.
 	if _, ok := c.seStore.sessions[c.key]; ok {
-		c.seStore.destroy(action, c.key, fname)
+		c.seStore.destroy(c.key, fname)
 		return
 	}
 	if log.Is(log.DEBUG) {
 		const event = "no session to destroy"
-		log.Debug(nil, action, fname, event, "SID", c.key)
+		log.Debug(nil, pkg, fname, event, "SID", c.key)
 	}
 }
 
 // touch updates the modified time of a session, required as sessions
 // are being passed by value, not by reference.
-func (c command) touch(action string) (s Session) {
+func (c command) touch() (s Session) {
 	const fname = "cmd.touch"
 	// If there is a session update its time.
 	s, ok := c.seStore.sessions[c.key]
@@ -158,7 +163,7 @@ func (c command) touch(action string) (s Session) {
 	}
 	if log.Is(log.DEBUG) {
 		const event = "no session for this key"
-		log.Debug(nil, action, fname, event, "SID", c.key)
+		log.Debug(nil, pkg, fname, event, "SID", c.key)
 	}
 	return Session{}
 }
@@ -166,31 +171,31 @@ func (c command) touch(action string) (s Session) {
 // timeout iterates over all of the sessions in the index array,
 // destroying any that have a timeout setting that is less than the
 // difference between now and the last modified time.
-func (c command) timeout(action string) {
+func (c command) timeout() {
 	const fname = "cmd.timeout"
 	if log.Is(log.DEBUG) {
 		const event = "clearing session store"
-		log.Debug(nil, action, fname, event)
+		log.Debug(nil, pkg, fname, event)
 	}
 	for key := range c.seStore.sessions {
 		s := c.seStore.sessions[key]
 		if time.Since(s.modified) > s.maxage {
-			c.seStore.destroy(action, key, fname)
+			c.seStore.destroy(key, fname)
 		}
 	}
 }
 
 // def is the default action when the given command is not recognised.
-func (c command) def(action string) {
+func (c command) def() {
 	const fname = "cmd.def"
 	const event = "default fall through"
-	log.Fatal(action, fname, event, "cmd", c.cmd)
+	log.Fatal(pkg, fname, event, "cmd", c.cmd)
 }
 
 // destroy removes the session corresponding to the given SID from the
 // store, if it exists, this function is not to be used concurrently and
 // has be designed to run only for the dataServer function.
-func (s *Store) destroy(action string, key uuid.UUID, sender string) {
+func (s *Store) destroy(key uuid.UUID, sender string) {
 	const fname = "cmd.destroy"
 
 	// Retrieve the session.
@@ -198,7 +203,7 @@ func (s *Store) destroy(action string, key uuid.UUID, sender string) {
 	if !ok {
 		if log.Is(log.ERROR) {
 			const event = "no session found"
-			log.Err(nil, action, fname, event, "SID", key,
+			log.Err(nil, pkg, fname, event, "SID", key,
 				"caller", sender)
 		}
 		return
@@ -219,7 +224,7 @@ func (s *Store) destroy(action string, key uuid.UUID, sender string) {
 	delete(s.sessions, key)
 	if log.Is(log.DEBUG) {
 		const event = "session destroyed"
-		log.Debug(nil, action, fname, event, "SID", key,
+		log.Debug(nil, pkg, fname, event, "SID", key,
 			"caller", sender)
 	}
 }
@@ -249,10 +254,13 @@ func Init() *Store {
 
 // Create makes a session for which the given SID is the key, returning
 // and error if the SID is already in use.
-func (s *Store) Create(sid uuid.UUID, maxage int) (
-	se Session, err error) {
+func (s *Store) Create(sid uuid.UUID, maxage int) (se Session, err error) {
+	const fname = "Store.Create"
+	fail := func(err error) (Session, error) {
+		return se, fmt.Errorf("%s: %w", fname, err)
+	}
 	if sid.Variant() == uuid.Invalid {
-		err = meta.Err05Request
+		return fail(ErrPoorForm)
 	}
 	res := make(chan Session)
 	c := command{
@@ -265,7 +273,7 @@ func (s *Store) Create(sid uuid.UUID, maxage int) (
 	s.commands <- c
 	sess := <-res
 	if !sess.active {
-		err = meta.Err08Resource
+		return fail(ErrNoSession)
 	}
 	se = sess
 	return
@@ -273,10 +281,14 @@ func (s *Store) Create(sid uuid.UUID, maxage int) (
 
 // Restore returns a session for which the given SID is the key if it
 // exists, returning an error if it does not.
-func (s *Store) Restore(sid uuid.UUID) (
-	se Session, err error) {
+func (s *Store) Restore(sid uuid.UUID) (se Session, err error) {
+	const fname = "Store.Restore"
+	fail := func(err error) (Session, error) {
+		return se, fmt.Errorf("%s: %w", fname, err)
+	}
+
 	if sid.Variant() == uuid.Invalid {
-		err = meta.Err05Request
+		return fail(ErrPoorForm)
 	}
 	res := make(chan Session)
 	c := command{
@@ -288,7 +300,7 @@ func (s *Store) Restore(sid uuid.UUID) (
 	s.commands <- c
 	sess := <-res
 	if !sess.active {
-		err = meta.Err09Record
+		return fail(ErrNoSession)
 	}
 	se = sess
 	return
@@ -296,8 +308,9 @@ func (s *Store) Restore(sid uuid.UUID) (
 
 // Destroy removes a session from the store.
 func (s *Store) Destroy(sid uuid.UUID) (err error) {
+	const fname = "Store.Destroy"
 	if sid.Variant() == uuid.Invalid {
-		err = meta.Err05Request
+		return fmt.Errorf("%s: %w", fname, ErrNoSession)
 	}
 	res := make(chan Session)
 	c := command{
@@ -365,23 +378,25 @@ type Session struct {
 
 // Set stores the given key pair value.
 func (s Session) Set(key string, value interface{}) (err error) {
-	const fname = "s.Set"
-	const action = "set value"
+	const fname = "Session.Set"
+	fail := func(err error) error {
+		return fmt.Errorf("%s: %w", fname, err)
+	}
 	if s.sto == nil || !s.active {
-		return meta.Err03Activation
+		return fail(ErrTimedOut)
 	}
 	s = s.sto.touch(s.id)
 	if !s.active {
 		if log.Is(log.DEBUG) {
 			const event = "failed"
-			log.Debug(nil, action, fname, event,
+			log.Debug(nil, pkg, fname, event,
 				"SID", s.id)
 		}
-		return meta.Err08Resource
+		return fail(ErrTimedOut)
 	}
 	if log.Is(log.DEBUG) {
 		const event = "success"
-		log.Debug(nil, action, fname, event,
+		log.Debug(nil, pkg, fname, event,
 			"SID", s.id)
 	}
 	s.data[key] = value
@@ -389,30 +404,30 @@ func (s Session) Set(key string, value interface{}) (err error) {
 }
 
 // Get retrieves the value paired with key.
-func (s Session) Get(key string) (
-	value interface{}, err error) {
-	const fname = "s.Get"
-	const action = "get value"
+func (s Session) Get(key string) (value interface{}, err error) {
+	const fname = "Session.Get"
+	fail := func(err error) (interface{}, error) {
+		return nil, fmt.Errorf("%s: %w", fname, err)
+	}
 	if s.sto == nil || !s.active {
-		return nil, meta.Err03Activation
+		return fail(ErrPoorForm)
 	}
 	s = s.sto.touch(s.id)
 	if !s.active {
-		return nil, meta.Err08Resource
+		return fail(ErrNoSession)
 	}
 	value, ok := s.data[key]
 	if !ok {
 		if log.Is(log.DEBUG) {
 			const event = "failed"
-			log.Debug(nil, action, fname, event,
+			log.Debug(nil, pkg, fname, event,
 				"SID", s.id)
 		}
-		err = meta.Err09Record
-		return
+		return fail(ErrNoData)
 	}
 	if log.Is(log.DEBUG) {
 		const event = "success"
-		log.Debug(nil, action, fname, event,
+		log.Debug(nil, pkg, fname, event,
 			"SID", s.id)
 	}
 	return
@@ -420,24 +435,26 @@ func (s Session) Get(key string) (
 
 // Del deletes the value paired with key.
 func (s Session) Del(key string) (err error) {
-	const fname = "s.Del"
-	const action = "value deletion"
+	const fname = "Session.Del"
+	fail := func(err error) error {
+		return fmt.Errorf("%s: %w", fname, err)
+	}
 	if s.sto == nil || !s.active {
-		return meta.Err03Activation
+		return fail(ErrPoorForm)
 	}
 	s = s.sto.touch(s.id)
 	if !s.active {
 		if log.Is(log.DEBUG) {
 			const event = "failed"
-			log.Debug(nil, action, fname, event,
+			log.Debug(nil, pkg, fname, event,
 				"SID", s.id)
 		}
-		return meta.Err08Resource
+		return fail(ErrNoSession)
 	}
 	delete(s.data, key)
 	if log.Is(log.DEBUG) {
 		const event = "success"
-		log.Debug(nil, action, fname, event,
+		log.Debug(nil, pkg, fname, event,
 			"SID", s.id)
 	}
 	return

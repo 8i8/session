@@ -1,7 +1,5 @@
 github.com/8i8/log v0.0.25 h1:8/YL+y8E9sIHCIxjQU37BsQ4iBD6MTNpFa11OhDx83k=
 github.com/8i8/log v0.0.25/go.mod h1:iJxi2NOBzXCLISr7SYvlICY7CjFcAZd3SZb9dPvjKbE=
-github.com/8i8/meta v0.0.0-20210523103202-4bc938f019ff h1:JexDVIYRbBP5Hnxsh3B8NO9cQ7q/ToKTy4Vgbn+TWxA=
-github.com/8i8/meta v0.0.0-20210523103202-4bc938f019ff/go.mod h1:k7QHi7VGtSi+Xfd6WI4QClxMFQQ3W6aFf5rWrtXVxUM=
 github.com/8i8/term v0.0.4 h1:9HG2JSVuI+rC1mZA/kkRhsdiTcu4B2vL1yoPu2LmqEM=
 github.com/8i8/term v0.0.4/go.mod h1:YoteUJ8PCEFLlQJAEvD1/GLFY6r2G7Zr2ChirMWkwVk=
 github.com/google/uuid v1.2.0 h1:qJYtXnJRWmpe7m/3XlyhrsLrEURqHRM2kxzoxXqyUDs=
