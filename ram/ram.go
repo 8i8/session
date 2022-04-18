@@ -13,7 +13,7 @@ const pkg = "session"
 var ErrNoSession = errors.New("session does not exist")
 var ErrPoorForm = errors.New("poorly formed uuid")
 var ErrTimedOut = errors.New("session timed out")
-var ErrNoData = errors.New("no data in session")
+var ErrNoData = errors.New("data not found in session")
 
 // valueStore is the providrs data storage.
 type valueStore map[interface{}]interface{}
